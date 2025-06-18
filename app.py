@@ -2,28 +2,23 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# -----------------------------
-# Load the trained model and feature list
-# -----------------------------
+# Load model and encoders
 model = joblib.load("sleep_disorder_model.pkl")
-feature_cols = joblib.load("feature_columns.pkl")  # List of column names used during training
+feature_cols = joblib.load("feature_columns.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
 
-# -----------------------------
-# Streamlit UI
-# -----------------------------
-st.set_page_config(page_title="Sleep Disorder Prediction", layout="centered")
+st.set_page_config(page_title="Sleep Disorder Predictor", layout="centered")
 st.title("🛏️ Sleep Disorder Prediction App")
-st.write("Fill in the details below to predict the likelihood of sleep disorders based on health and lifestyle metrics.")
+st.write("Provide the following health and lifestyle details:")
 
-# -----------------------------
 # Input fields
-# -----------------------------
 gender = st.selectbox("Gender", ["Male", "Female"])
 age = st.slider("Age", 18, 80, 30)
 occupation = st.selectbox("Occupation", [
-    "Accountant", "Doctor", "Engineer", "Lawyer", "Manager", "Nurse", 
-    "Sales Representative", "Salesperson", "Scientist", "Software Engineer", "Teacher"])
-sleep_duration = st.slider("Sleep Duration (hrs)", 3.0, 12.0, 6.5)
+    "Accountant", "Doctor", "Engineer", "Lawyer", "Manager", "Nurse",
+    "Sales Representative", "Salesperson", "Scientist", "Software Engineer", "Teacher"
+])
+sleep_duration = st.slider("Sleep Duration (hours)", 3.0, 12.0, 7.0)
 quality_of_sleep = st.slider("Quality of Sleep (1–10)", 1, 10, 6)
 physical_activity = st.slider("Physical Activity Level", 0, 100, 50)
 stress_level = st.slider("Stress Level (1–10)", 1, 10, 5)
@@ -33,13 +28,11 @@ daily_steps = st.slider("Daily Steps", 0, 20000, 5000)
 systolic_bp = st.slider("Systolic BP", 80, 180, 120)
 diastolic_bp = st.slider("Diastolic BP", 50, 120, 80)
 
-# -----------------------------
-# Manual encoding
-# -----------------------------
+# Encode inputs
 gender_map = {"Male": 1, "Female": 0}
-bmi_map = {"Underweight": 3, "Normal": 2, "Overweight": 1, "Obese": 0}  # Match your training encoding
+bmi_map = {"Underweight": 3, "Normal": 2, "Overweight": 1, "Obese": 0}
 occupation_list = [
-    "Accountant", "Doctor", "Engineer", "Lawyer", "Manager", "Nurse", 
+    "Accountant", "Doctor", "Engineer", "Lawyer", "Manager", "Nurse",
     "Sales Representative", "Salesperson", "Scientist", "Software Engineer", "Teacher"
 ]
 
@@ -58,13 +51,10 @@ input_dict = {
     "diastolic_bp": diastolic_bp
 }
 
-# Convert to DataFrame and reorder columns to match model training
-input_data = pd.DataFrame([input_dict])[feature_cols]
+# Make prediction
+input_df = pd.DataFrame([input_dict])[feature_cols]
 
-# -----------------------------
-# Predict Button
-# -----------------------------
 if st.button("Predict"):
-    prediction = model.predict(input_data)[0]
-    label_map = {0: "None", 1: "Insomnia", 2: "Sleep Apnea"}  # Use the encoding from your model
-    st.success(f"🧠 Predicted Sleep Disorder: **{label_map[prediction]}**")
+    prediction = model.predict(input_df)[0]
+    prediction_label = label_encoder.inverse_transform([prediction])[0]
+    st.success(f"🧠 Predicted Sleep Disorder: **{prediction_label}**")
